@@ -21,8 +21,8 @@ type AwsController struct {
 	bucket string
 }
 
-// StartAWS starts a AWS method
-func StartAWS() *AwsController {
+// New starts a AWS method
+func New() *AwsController {
 	bucket := os.Getenv("AWS_BUCKET")
 	return &AwsController{
 		bucket: bucket,
