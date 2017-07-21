@@ -80,7 +80,7 @@ func (ac *AwsController) Get(key string, o Object) (bool, error) {
 
 // Put sends a file to AWS S3 bucket, uses name of file.
 // This will Put the file in the main bucket directory.
-func (ac *AwsController) Put(filename string, o Object) (string, error) {
+func (ac *AwsController) Put(filename string, o Object) (*string, error) {
 	r := bytes.NewReader(un.Bytes(json.Marshal(o)))
 
 	input := &s3.PutObjectInput{
@@ -92,7 +92,7 @@ func (ac *AwsController) Put(filename string, o Object) (string, error) {
 
 	result, err := ac.c3svc.PutObject(input)
 
-	return *result.VersionId, err
+	return result.VersionId, err
 }
 
 // GetList gets a list of files in the bucket
