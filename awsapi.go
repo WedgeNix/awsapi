@@ -2,6 +2,7 @@ package awsapi
 
 import (
 	"os"
+	"time"
 
 	"encoding/json"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/wedgenix/awsapi/object"
 )
 
 // AwsController method struct for StartAWS
@@ -34,11 +34,29 @@ func New() *AwsController {
 	}
 }
 
+// Monitor holds SKU information needed for just-in-time calculations.
+type Monitor struct {
+	Sold    int
+	Days    int
+	Then    time.Time
+	Pending bool
+}
+
+// Object represents any package-level type.
+type Object interface {
+	__()
+}
+
+// ObjectMonitors maps SKUs to their respective just-in-time data.
+type ObjectMonitors map[string]Monitor
+
+func (_ ObjectMonitors) __() {}
+
 // GetObject gets JSON from AWS S3 populates the custom struct of the file
 // key is the dir + "/" + filename
 // returns false if err reads NoSuchKey meaning does not exist. Can read true
 // if another error happens, so must determain how to handle error
-func (ac *AwsController) GetObject(key string, o object.Any) (bool, error) {
+func (ac *AwsController) GetObject(key string, o Object) (bool, error) {
 	result, err := ac.c3svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(ac.bucket),
 		Key:    aws.String(key),
