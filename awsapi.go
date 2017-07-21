@@ -9,7 +9,6 @@ import (
 
 	"strings"
 
-	"github.com/WedgeNix/util"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -36,13 +35,19 @@ func New() *AwsController {
 
 // GetObject gets JSON from AWS S3 populates the custom struct of the file
 // key is the dir + "/" + filename
-func (ac *AwsController) GetObject(key string, inter interface{}) {
+// returns false if err reads NoSuchKey meaning does not exist. Can read true
+// if another error happens, so must determain how to handle error
+func (ac *AwsController) GetObject(key string, inter interface{}) (bool, error) {
 	result, err := ac.c3svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(ac.bucket),
 		Key:    aws.String(key),
 	})
-	util.E(err)
-	json.NewDecoder(result.Body).Decode(&inter)
+	if err == nil {
+		json.NewDecoder(result.Body).Decode(inter)
+		return true, nil
+	}
+
+	return !strings.Contains(err.Error(), "NoSuchKey"), err
 }
 
 // PutObject sends a file to AWS S3 bucket, uses name of file.
