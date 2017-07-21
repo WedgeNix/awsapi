@@ -51,7 +51,7 @@ type Object interface {
 }
 
 // ObjectMonitors maps SKUs to their respective just-in-time data.
-type ObjectMonitors map[string]Monitor
+type ObjectMonitors map[string]*Monitor
 
 // allows ObjectMonitors to be bound to the Object interface
 func (_ ObjectMonitors) __() {}
@@ -72,8 +72,10 @@ func (ac *AwsController) Get(key string, o Object) (bool, error) {
 		json.NewDecoder(result.Body).Decode(o)
 		return true, nil
 	}
-
-	return !strings.Contains(err.Error(), "NoSuchKey"), err
+	if strings.Contains(err.Error(), "NoSuchKey") {
+		return false, nil
+	}
+	return true, err
 }
 
 // Put sends a file to AWS S3 bucket, uses name of file.
