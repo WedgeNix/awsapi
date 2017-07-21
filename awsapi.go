@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/wedgenix/awsapi/object"
 )
 
 // AwsController method struct for StartAWS
@@ -37,13 +38,13 @@ func New() *AwsController {
 // key is the dir + "/" + filename
 // returns false if err reads NoSuchKey meaning does not exist. Can read true
 // if another error happens, so must determain how to handle error
-func (ac *AwsController) GetObject(key string, inter interface{}) (bool, error) {
+func (ac *AwsController) GetObject(key string, o object.Any) (bool, error) {
 	result, err := ac.c3svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(ac.bucket),
 		Key:    aws.String(key),
 	})
 	if err == nil {
-		json.NewDecoder(result.Body).Decode(inter)
+		json.NewDecoder(result.Body).Decode(o)
 		return true, nil
 	}
 
