@@ -50,6 +50,7 @@ type Object interface {
 // ObjectMonitors maps SKUs to their respective just-in-time data.
 type ObjectMonitors map[string]Monitor
 
+// allows ObjectMonitors to be bound to the Object interface
 func (_ ObjectMonitors) __() {}
 
 // GetObject gets JSON from AWS S3 populates the custom struct of the file
