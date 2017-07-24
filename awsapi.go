@@ -146,10 +146,10 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 
 	// print.Debug("attempt to convert to monitor")
 
-	// dm, ok := d.(*dir.Monitor)
-	// if !ok {
-	// 	return errors.New("unknown type; possibly unimplemented")
-	// }
+	dm, ok := d.(dir.Monitor)
+	if !ok {
+		return errors.New("unknown type; possibly unimplemented")
+	}
 
 	print.Debug("run through all contents")
 
@@ -169,7 +169,7 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 		if err != nil {
 			return err
 		}
-		print.Msg(f)
+		dm[k] = f
 
 		// print.Debug("getting the actual file, populating the monitor")
 
