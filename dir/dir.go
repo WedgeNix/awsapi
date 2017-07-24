@@ -9,6 +9,6 @@ type Any interface {
 	__()
 }
 
-type Monitor map[string]*file.Monitor
+type Monitor map[string]file.Monitor
 
 func (_ Monitor) __() {}

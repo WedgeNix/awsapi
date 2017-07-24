@@ -161,6 +161,7 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 
 			continue
 		}
+		print.Msg(`key='`, k, `'`)
 
 		print.Debug("getting the actual file, populating the monitor")
 
@@ -172,7 +173,7 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 
 		print.Msg("len=", len(dm))
 		for k, v := range dm {
-			print.Msg(`"`, k, `": `, *v)
+			print.Msg(`"`, k, `": `, v)
 		}
 	}
 
