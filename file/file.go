@@ -8,7 +8,7 @@ type Any interface {
 }
 
 // Monitor maps SKUs to their respective just-in-time data.
-type Monitor map[string]*types.MonitorSKU
+type Monitor map[string]types.MonitorSKU
 
 // allows Monitor to be bound to the Any interface
 func (_ Monitor) __() {}
