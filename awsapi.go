@@ -42,20 +42,36 @@ func New() *AwsController {
 // returns false if err reads NoSuchKey meaning does not exist. Can read true
 // if another error happens, so must determain how to handle error
 func (ac *AwsController) Get(key string, f file.Any) (bool, error) {
+
+	print.Debug("preparing input")
+
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(ac.bucket),
 		Key:    aws.String(key),
 	}
 
+	print.Debug("getting result from AWS object")
+
 	result, err := ac.c3svc.GetObject(input)
 
 	if err == nil {
+
+		print.Debug("no error; populate our version of the file")
+
 		json.NewDecoder(result.Body).Decode(f)
+
+		print.Debug("successfully populated")
+
 		return true, nil
 	}
 	if strings.Contains(err.Error(), "NoSuchKey") {
+
+		print.Msg("no such key for '", key, "'")
+
 		return false, nil
 	}
+
+	print.Debug("gotten!")
 
 	return true, err
 }
@@ -150,6 +166,7 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 
 		_, err := ac.Get(k, dm[k])
 		if err != nil {
+			print.Msg(`could not get '`, k, `'`)
 			return err
 		}
 	}
