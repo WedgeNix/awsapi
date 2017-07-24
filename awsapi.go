@@ -169,6 +169,11 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 			print.Msg(`could not get '`, k, `'`)
 			return err
 		}
+
+		print.Msg("len=", len(dm))
+		for k, v := range dm {
+			print.Msg(`"`, k, `": `, *v)
+		}
 	}
 
 	return nil
