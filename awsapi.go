@@ -144,7 +144,7 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 	// 	return nil
 	// }
 
-	print.Debug("attempt to convert to monitor")
+	// print.Debug("attempt to convert to monitor")
 
 	// dm, ok := d.(*dir.Monitor)
 	// if !ok {
@@ -153,6 +153,7 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 
 	print.Debug("run through all contents")
 
+	print.Msg(`len(loo.Contents) = `, len(loo.Contents))
 	for _, obj := range loo.Contents {
 		k := *obj.Key
 		if prefix == k {
