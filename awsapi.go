@@ -146,10 +146,10 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 
 	print.Debug("attempt to convert to monitor")
 
-	dm, ok := d.(*dir.Monitor)
-	if !ok {
-		return errors.New("unknown type; possibly unimplemented")
-	}
+	// dm, ok := d.(*dir.Monitor)
+	// if !ok {
+	// 	return errors.New("unknown type; possibly unimplemented")
+	// }
 
 	print.Debug("run through all contents")
 
@@ -157,24 +157,24 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 		k := *obj.Key
 		if prefix == k {
 
-			print.Debug("the key and prefix are not equal")
+			// print.Debug("the key and prefix are not equal")
 
 			continue
 		}
 		print.Msg(`key='`, k, `'`)
 
-		print.Debug("getting the actual file, populating the monitor")
+		// print.Debug("getting the actual file, populating the monitor")
 
-		_, err := ac.Get(k, (*dm)[k])
-		if err != nil {
-			print.Msg(`could not get '`, k, `'`)
-			return err
-		}
+		// _, err := ac.Get(k, (*dm)[k])
+		// if err != nil {
+		// 	print.Msg(`could not get '`, k, `'`)
+		// 	return err
+		// }
 
-		print.Msg("len=", len(*dm))
-		for k, v := range *dm {
-			print.Msg(`"`, k, `": `, &v)
-		}
+		// print.Msg("len=", len(*dm))
+		// for k, v := range *dm {
+		// 	print.Msg(`"`, k, `": `, &v)
+		// }
 	}
 
 	return nil
