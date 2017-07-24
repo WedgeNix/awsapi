@@ -164,6 +164,13 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 		}
 		print.Msg(`key='`, k, `'`)
 
+		var f file.Monitor
+		_, err := ac.Get(k, &f)
+		if err != nil {
+			return err
+		}
+		print.Msg(f)
+
 		// print.Debug("getting the actual file, populating the monitor")
 
 		// _, err := ac.Get(k, (*dm)[k])
