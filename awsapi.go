@@ -6,17 +6,15 @@ import (
 
 	"encoding/json"
 
-	"fmt"
-
 	"strings"
 
 	"bytes"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/mrmiguu/print"
 	"github.com/mrmiguu/un"
 	"github.com/wedgenix/awsapi/dir"
 	"github.com/wedgenix/awsapi/file"
@@ -97,40 +95,64 @@ func (ac *AwsController) PutDir(path string, d dir.Any) error {
 
 // GetDir gets a list of files in the bucket
 func (ac *AwsController) GetDir(path string, d dir.Any) error {
+
+	print.Debug("prepare prefix and input")
+
 	prefix := path + `/`
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(ac.bucket),
 		Prefix: aws.String(prefix),
 	}
 
-	result, err := ac.c3svc.ListObjects(input)
+	print.Debug("grab list of objects")
+
+	loo, err := ac.c3svc.ListObjects(input)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeNoSuchBucket:
-				fmt.Println(s3.ErrCodeNoSuchBucket, aerr.Error())
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		// return nil
-		return nil
+		return err
 	}
+
+	// if err != nil {
+	// 	if aerr, ok := err.(awserr.Error); ok {
+	// 		switch aerr.Code() {
+	// 		case s3.ErrCodeNoSuchBucket:
+	// 			fmt.Println(s3.ErrCodeNoSuchBucket, aerr.Error())
+	// 		default:
+	// 			fmt.Println(aerr.Error())
+	// 		}
+	// 	} else {
+	// 		// Print the error, cast err to awserr.Error to get the Code and
+	// 		// Message from an error.
+	// 		fmt.Println(err.Error())
+	// 	}
+	// 	// return nil
+	// 	return nil
+	// }
+
+	print.Debug("attempt to convert to monitor")
+
 	dm, ok := d.(dir.Monitor)
 	if !ok {
 		return errors.New("unknown type; possibly unimplemented")
 	}
-	// return result
-	for _, obj := range result.Contents {
+
+	print.Debug("run through all contents")
+
+	for _, obj := range loo.Contents {
 		k := *obj.Key
 		if prefix == k {
+
+			print.Debug("the key and prefix are not equal")
+
 			continue
 		}
-		_, err = ac.Get(k, dm[k])
+
+		print.Debug("getting the actual file, populating the monitor")
+
+		_, err := ac.Get(k, dm[k])
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
