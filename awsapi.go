@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/mrmiguu/print"
-	"github.com/mrmiguu/un"
 	"github.com/wedgenix/awsapi/dir"
 	"github.com/wedgenix/awsapi/file"
 )
@@ -24,6 +23,7 @@ import (
 type AwsController struct {
 	c3svc  *s3.S3
 	bucket string
+	verIDs map[string]*string
 }
 
 // New starts a AWS method
@@ -35,6 +35,15 @@ func New() *AwsController {
 			Credentials: credentials.NewEnvCredentials(),
 		}))),
 	}
+}
+
+// GetVerIDs grabs a view of all captured version IDs.
+func (ac AwsController) GetVerIDs() map[string]string {
+	var bin map[string]string
+	for filename, vID := range ac.verIDs {
+		bin[filename] = *vID
+	}
+	return bin
 }
 
 // Get gets JSON from AWS S3 populates the custom struct of the file
@@ -78,8 +87,13 @@ func (ac *AwsController) Get(key string, f file.Any) (bool, error) {
 
 // Put sends a file to AWS S3 bucket, uses name of file.
 // This will Put the file in the main bucket directory.
-func (ac *AwsController) Put(filename string, f file.Any) (*string, error) {
-	r := bytes.NewReader(un.Bytes(json.Marshal(f)))
+func (ac *AwsController) Put(filename string, f file.Any) error {
+	b, err := json.Marshal(f)
+	if err != nil {
+		return err
+	}
+
+	r := bytes.NewReader(b)
 
 	input := &s3.PutObjectInput{
 		Body:                 aws.ReadSeekCloser(r),
@@ -89,8 +103,13 @@ func (ac *AwsController) Put(filename string, f file.Any) (*string, error) {
 	}
 
 	result, err := ac.c3svc.PutObject(input)
+	if err != nil {
+		return err
+	}
 
-	return result.VersionId, err
+	ac.verIDs[filename] = result.VersionId
+
+	return err
 }
 
 // PutDir writes the given directory to AWS at the specified path.
@@ -98,7 +117,7 @@ func (ac *AwsController) PutDir(path string, d dir.Any) error {
 	switch d := d.(type) {
 	case dir.Monitor:
 		for filename, f := range d {
-			_, err := ac.Put(filename, f)
+			err := ac.Put(filename, f)
 			if err != nil {
 				return err
 			}
@@ -127,25 +146,6 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 		return err
 	}
 
-	// if err != nil {
-	// 	if aerr, ok := err.(awserr.Error); ok {
-	// 		switch aerr.Code() {
-	// 		case s3.ErrCodeNoSuchBucket:
-	// 			fmt.Println(s3.ErrCodeNoSuchBucket, aerr.Error())
-	// 		default:
-	// 			fmt.Println(aerr.Error())
-	// 		}
-	// 	} else {
-	// 		// Print the error, cast err to awserr.Error to get the Code and
-	// 		// Message from an error.
-	// 		fmt.Println(err.Error())
-	// 	}
-	// 	// return nil
-	// 	return nil
-	// }
-
-	// print.Debug("attempt to convert to monitor")
-
 	dm, ok := d.(dir.Monitor)
 	if !ok {
 		return errors.New("unknown type; possibly unimplemented")
@@ -156,13 +156,10 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 	print.Msg(`len(loo.Contents) = `, len(loo.Contents))
 	for _, obj := range loo.Contents {
 		k := *obj.Key
+
 		if prefix == k {
-
-			// print.Debug("the key and prefix are not equal")
-
 			continue
 		}
-		print.Msg(`key='`, k, `'`)
 
 		var f file.Monitor
 		_, err := ac.Get(k, &f)
@@ -170,19 +167,6 @@ func (ac *AwsController) GetDir(path string, d dir.Any) error {
 			return err
 		}
 		dm[k] = f
-
-		// print.Debug("getting the actual file, populating the monitor")
-
-		// _, err := ac.Get(k, (*dm)[k])
-		// if err != nil {
-		// 	print.Msg(`could not get '`, k, `'`)
-		// 	return err
-		// }
-
-		// print.Msg("len=", len(*dm))
-		// for k, v := range *dm {
-		// 	print.Msg(`"`, k, `": `, &v)
-		// }
 	}
 
 	return nil
