@@ -1,7 +1,7 @@
 package dir
 
 import (
-	"github.com/wedgenix/awsapi/file"
+	"github.com/WedgeNix/awsapi/file"
 )
 
 // Any represents any package-level type of AWS directory.

@@ -1,6 +1,6 @@
 package file
 
-import "github.com/wedgenix/awsapi/types"
+import "github.com/WedgeNix/awsapi/types"
 
 // Any represents any package-level type of AWS file.
 type Any interface {

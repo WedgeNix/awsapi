@@ -10,12 +10,12 @@ import (
 
 	"bytes"
 
+	"github.com/WedgeNix/awsapi/dir"
+	"github.com/WedgeNix/awsapi/file"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/wedgenix/awsapi/dir"
-	"github.com/wedgenix/awsapi/file"
 )
 
 // Controller method struct for StartAWS
