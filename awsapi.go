@@ -26,14 +26,15 @@ type Controller struct {
 }
 
 // New starts a AWS method
-func New() *Controller {
-	bucket := os.Getenv("AWS_BUCKET")
-	return &Controller{
-		bucket: bucket,
-		c3svc: s3.New(session.Must(session.NewSession(&aws.Config{
-			Credentials: credentials.NewEnvCredentials(),
-		}))),
+func New() (*Controller, error) {
+	var c Controller
+	c.bucket = os.Getenv("AWS_BUCKET")
+	sess, err := session.NewSession(&aws.Config{Credentials: credentials.NewEnvCredentials()})
+	if err != nil {
+		return &c, err
 	}
+	c.c3svc = s3.New(sess)
+	return &c, nil
 }
 
 // GetVerIDs grabs a view of all captured version IDs.
