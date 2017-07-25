@@ -14,22 +14,21 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/mrmiguu/print"
 	"github.com/wedgenix/awsapi/dir"
 	"github.com/wedgenix/awsapi/file"
 )
 
-// AwsController method struct for StartAWS
-type AwsController struct {
+// Controller method struct for StartAWS
+type Controller struct {
 	c3svc  *s3.S3
 	bucket string
 	verIDs map[string]*string
 }
 
 // New starts a AWS method
-func New() *AwsController {
+func New() *Controller {
 	bucket := os.Getenv("AWS_BUCKET")
-	return &AwsController{
+	return &Controller{
 		bucket: bucket,
 		c3svc: s3.New(session.Must(session.NewSession(&aws.Config{
 			Credentials: credentials.NewEnvCredentials(),
@@ -38,56 +37,40 @@ func New() *AwsController {
 }
 
 // GetVerIDs grabs a view of all captured version IDs.
-func (ac AwsController) GetVerIDs() map[string]string {
+func (c Controller) GetVerIDs() map[string]string {
 	var bin map[string]string
-	for filename, vID := range ac.verIDs {
+	for filename, vID := range c.verIDs {
 		bin[filename] = *vID
 	}
 	return bin
 }
 
-// Get gets JSON from AWS S3 populates the custom struct of the file
+// Open gets JSON from AWS S3 populates the custom struct of the file
 // key is the dir + "/" + filename
 // returns false if err reads NoSuchKey meaning does not exist. Can read true
 // if another error happens, so must determain how to handle error
-func (ac *AwsController) Get(key string, f file.Any) (bool, error) {
-
-	print.Debug("preparing input")
-
+func (c *Controller) Open(name string, f file.Any) (bool, error) {
 	input := &s3.GetObjectInput{
-		Bucket: aws.String(ac.bucket),
-		Key:    aws.String(key),
+		Bucket: aws.String(c.bucket),
+		Key:    aws.String(name),
 	}
-
-	print.Debug("getting result from AWS object")
-
-	result, err := ac.c3svc.GetObject(input)
+	resp, err := c.c3svc.GetObject(input)
 
 	if err == nil {
-
-		print.Debug("no error; populate our version of the file")
-
-		json.NewDecoder(result.Body).Decode(f)
-
-		print.Debug("successfully populated")
-
+		json.NewDecoder(resp.Body).Decode(f)
 		return true, nil
 	}
+
 	if strings.Contains(err.Error(), "NoSuchKey") {
-
-		print.Msg("no such key for '", key, "'")
-
 		return false, nil
 	}
-
-	print.Debug("gotten!")
 
 	return true, err
 }
 
-// Put sends a file to AWS S3 bucket, uses name of file.
+// Save sends a file to AWS S3 bucket, uses name of file.
 // This will Put the file in the main bucket directory.
-func (ac *AwsController) Put(filename string, f file.Any) error {
+func (c *Controller) Save(name string, f file.Any) error {
 	b, err := json.Marshal(f)
 	if err != nil {
 		return err
@@ -97,27 +80,27 @@ func (ac *AwsController) Put(filename string, f file.Any) error {
 
 	input := &s3.PutObjectInput{
 		Body:                 aws.ReadSeekCloser(r),
-		Bucket:               aws.String(ac.bucket),
-		Key:                  aws.String(filename),
+		Bucket:               aws.String(c.bucket),
+		Key:                  aws.String(name),
 		ServerSideEncryption: aws.String("AES256"),
 	}
 
-	result, err := ac.c3svc.PutObject(input)
+	result, err := c.c3svc.PutObject(input)
 	if err != nil {
 		return err
 	}
 
-	ac.verIDs[filename] = result.VersionId
+	c.verIDs[name] = result.VersionId
 
-	return err
+	return nil
 }
 
-// PutDir writes the given directory to AWS at the specified path.
-func (ac *AwsController) PutDir(path string, d dir.Any) error {
+// SaveDir writes the given directory to AWS at the specified path.
+func (c *Controller) SaveDir(d dir.Any) error {
 	switch d := d.(type) {
 	case dir.Monitor:
-		for filename, f := range d {
-			err := ac.Put(filename, f)
+		for name, f := range d {
+			err := c.Save(name, f)
 			if err != nil {
 				return err
 			}
@@ -128,46 +111,40 @@ func (ac *AwsController) PutDir(path string, d dir.Any) error {
 	}
 }
 
-// GetDir gets a list of files in the bucket
-func (ac *AwsController) GetDir(path string, d dir.Any) error {
-
-	print.Debug("prepare prefix and input")
-
-	prefix := path + `/`
-	input := &s3.ListObjectsInput{
-		Bucket: aws.String(ac.bucket),
-		Prefix: aws.String(prefix),
+// OpenDir gets a list of files in the bucket
+func (c *Controller) OpenDir(name string, d dir.Any) error {
+	if len(name) > 0 && string(name[len(name)-1]) != `/` {
+		name += `/`
 	}
 
-	print.Debug("grab list of objects")
-
-	loo, err := ac.c3svc.ListObjects(input)
+	input := &s3.ListObjectsInput{
+		Bucket: aws.String(c.bucket),
+		Prefix: aws.String(name),
+	}
+	output, err := c.c3svc.ListObjects(input)
 	if err != nil {
 		return err
 	}
 
-	dm, ok := d.(dir.Monitor)
-	if !ok {
+	switch d := d.(type) {
+	case dir.Monitor:
+		for _, obj := range output.Contents {
+			fname := *obj.Key
+			if fname == name {
+				continue
+			}
+
+			var f file.Monitor
+			_, err := c.Open(fname, &f)
+			if err != nil {
+				return err
+			}
+			d[fname] = f
+		}
+
+		return nil
+
+	default:
 		return errors.New("unknown type; possibly unimplemented")
 	}
-
-	print.Debug("run through all contents")
-
-	print.Msg(`len(loo.Contents) = `, len(loo.Contents))
-	for _, obj := range loo.Contents {
-		k := *obj.Key
-
-		if prefix == k {
-			continue
-		}
-
-		var f file.Monitor
-		_, err := ac.Get(k, &f)
-		if err != nil {
-			return err
-		}
-		dm[k] = f
-	}
-
-	return nil
 }
