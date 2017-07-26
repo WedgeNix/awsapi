@@ -9,6 +9,7 @@ type Any interface {
 	__()
 }
 
-type Monitor map[string]file.Monitor
+// BananasMon is a mapping of file names to monitor files.
+type BananasMon map[string]file.BananasMon
 
-func (_ Monitor) __() {}
+func (_ BananasMon) __() {}

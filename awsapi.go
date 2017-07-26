@@ -2,7 +2,6 @@ package awsapi
 
 import (
 	"errors"
-	"os"
 
 	"encoding/json"
 
@@ -19,8 +18,10 @@ import (
 )
 
 const (
-	// MonitorDir is the name of the monitor directory on AWS
-	MonitorDir = "MONITOR_DIR"
+	// BananasMonDir is the name of the monitor directory on AWS
+	BananasMonDir = "BANANAS_MON-DIR"
+	// BananasCfgFile holds the environment key to the config file
+	BananasCfgFile = "BANANAS_CFG-FILE"
 )
 
 // Controller method struct for StartAWS
@@ -31,14 +32,21 @@ type Controller struct {
 }
 
 // New starts a AWS method
-func New() (*Controller, error) {
+func New(test ...bool) (*Controller, error) {
 	var c Controller
-	c.bucket = os.Getenv("AWS_BUCKET")
+
+	c.bucket = "wedgenix-app-storage"
+	if len(test) > 0 && test[0] {
+		c.bucket = "wedgenixtestbucket"
+	}
+
 	sess, err := session.NewSession(&aws.Config{Credentials: credentials.NewEnvCredentials()})
 	if err != nil {
 		return &c, err
 	}
+
 	c.c3svc = s3.New(sess)
+
 	return &c, nil
 }
 
@@ -104,7 +112,7 @@ func (c *Controller) Save(name string, f file.Any) error {
 // SaveDir writes the given directory to AWS at the specified path.
 func (c *Controller) SaveDir(d dir.Any) error {
 	switch d := d.(type) {
-	case dir.Monitor:
+	case dir.BananasMon:
 		for name, f := range d {
 			err := c.Save(name, f)
 			if err != nil {
@@ -133,14 +141,14 @@ func (c *Controller) OpenDir(name string, d dir.Any) error {
 	}
 
 	switch d := d.(type) {
-	case dir.Monitor:
+	case dir.BananasMon:
 		for _, obj := range output.Contents {
 			fname := *obj.Key
 			if fname == name {
 				continue
 			}
 
-			var f file.Monitor
+			var f file.BananasMon
 			_, err := c.Open(fname, &f)
 			if err != nil {
 				return err
