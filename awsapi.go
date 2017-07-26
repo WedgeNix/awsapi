@@ -18,6 +18,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+const (
+	// MonitorDir is the name of the monitor directory on AWS
+	MonitorDir = "MONITOR_DIR"
+)
+
 // Controller method struct for StartAWS
 type Controller struct {
 	c3svc  *s3.S3
