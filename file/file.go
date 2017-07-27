@@ -8,13 +8,14 @@ type Any interface {
 }
 
 // BananasMon maps SKUs to their respective just-in-time data.
-type BananasMon map[string]types.BananasMonSKU
+type BananasMon struct {
+	AvgWait float64
+	SKUs    map[string]types.BananasMonSKU
+}
 
-// allows Monitor to be bound to the Any interface
 func (_ BananasMon) __() {}
 
 // BananasCfg maps SKUs to their respective just-in-time data.
 type BananasCfg types.BananasCfg
 
-// allows Monitor to be bound to the Any interface
 func (_ BananasCfg) __() {}
