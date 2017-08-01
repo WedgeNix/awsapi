@@ -13,7 +13,7 @@ type BananasMonSKU struct {
 
 // BananasCfg holds the program configuration for hit-the-bananas.
 type BananasCfg struct {
-	LastUTC       time.Time
+	LastLA        time.Time
 	PODays        []time.Weekday
 	OrdXDaysWorth int
 }
