@@ -6,9 +6,11 @@ import (
 
 // BananasMonSKU holds SKU information needed for just-in-time calculations.
 type BananasMonSKU struct {
-	Sold    int
-	LastUTC time.Time
-	Pending bool
+	Sold            int
+	Days            int
+	LastUTC         time.Time
+	Pending         bool
+	ProbationPeriod int
 }
 
 // BananasCfg holds the program configuration for hit-the-bananas.
@@ -17,3 +19,6 @@ type BananasCfg struct {
 	PODays        []time.Weekday
 	OrdXDaysWorth int
 }
+
+// SKUs maps SKUs to their respective monitor data.
+type SKUs map[string]BananasMonSKU

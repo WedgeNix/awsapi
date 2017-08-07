@@ -15,13 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-)
-
-const (
-	// BananasMonDir is the name of the monitor directory on AWS
-	BananasMonDir = "BANANAS_MON-DIR"
-	// BananasCfgFile holds the environment key to the config file
-	BananasCfgFile = "BANANAS_CFG-FILE"
+	"github.com/mrmiguu/print"
 )
 
 // Controller method struct for StartAWS
@@ -46,6 +40,8 @@ func New(test ...bool) (*Controller, error) {
 	}
 
 	c.c3svc = s3.New(sess)
+
+	c.verIDs = map[string]*string{}
 
 	return &c, nil
 }
@@ -89,6 +85,7 @@ func (c *Controller) Save(name string, f file.Any) error {
 	if err != nil {
 		return err
 	}
+	print.Msg(string(b))
 
 	r := bytes.NewReader(b)
 
@@ -110,11 +107,23 @@ func (c *Controller) Save(name string, f file.Any) error {
 }
 
 // SaveDir writes the given directory to AWS at the specified path.
-func (c *Controller) SaveDir(d dir.Any) error {
+func (c *Controller) SaveDir(path dir.Path, d dir.Any) error {
+	parts := strings.Split(string(path), "*")
+	if len(parts) < 1 {
+		return errors.New("No extension provided")
+	}
+	folder := parts[0]
+	if len(parts) < 2 {
+		return errors.New("No extension provided")
+	}
+	ext := parts[1]
+
 	switch d := d.(type) {
 	case dir.BananasMon:
+		print.Msg("files in dir: ", len(d))
 		for name, f := range d {
-			err := c.Save(name, f)
+			print.Msg("Saving '", name, "'")
+			err := c.Save(folder+name+ext, f)
 			if err != nil {
 				return err
 			}
@@ -126,14 +135,20 @@ func (c *Controller) SaveDir(d dir.Any) error {
 }
 
 // OpenDir gets a list of files in the bucket
-func (c *Controller) OpenDir(name string, d dir.Any) error {
-	if len(name) > 0 && string(name[len(name)-1]) != `/` {
-		name += `/`
+func (c *Controller) OpenDir(path dir.Path, d dir.Any) error {
+	parts := strings.Split(string(path), "/*")
+	if len(parts) < 1 {
+		return errors.New("No extension provided")
 	}
+	folder := parts[0]
+	if len(parts) < 2 {
+		return errors.New("No extension provided")
+	}
+	ext := parts[1]
 
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(c.bucket),
-		Prefix: aws.String(name),
+		Prefix: aws.String(folder),
 	}
 	output, err := c.c3svc.ListObjects(input)
 	if err != nil {
@@ -144,7 +159,11 @@ func (c *Controller) OpenDir(name string, d dir.Any) error {
 	case dir.BananasMon:
 		for _, obj := range output.Contents {
 			fname := *obj.Key
-			if fname == name {
+			if fname == folder {
+				continue
+			}
+
+			if !strings.Contains(fname, ext) {
 				continue
 			}
 
@@ -153,7 +172,9 @@ func (c *Controller) OpenDir(name string, d dir.Any) error {
 			if err != nil {
 				return err
 			}
-			d[fname] = f
+			withoutDir := strings.Replace(fname, folder+`/`, "", -1)
+			withoutDirExt := strings.Replace(withoutDir, ext, "", -1)
+			d[withoutDirExt] = f
 		}
 
 		return nil

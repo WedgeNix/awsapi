@@ -12,4 +12,9 @@ type Any interface {
 // BananasMon is a mapping of file names to monitor files.
 type BananasMon map[string]file.BananasMon
 
+type Path string
+
+// BananasMonName holds the filenames in the directory.
+const BananasMonName = Path("hit-the-bananas/mon/*.json")
+
 func (_ BananasMon) __() {}
