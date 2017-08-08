@@ -9,9 +9,9 @@ type Any interface {
 
 // BananasMon maps SKUs to their respective just-in-time data.
 type BananasMon struct {
-	AvgWait float64
-	OrdCnt float64
-	SKUs    types.SKUs
+	AvgWait   float64
+	OrdSKUCnt float64
+	SKUs      types.SKUs
 }
 
 func (_ BananasMon) __() {}
