@@ -9,7 +9,7 @@ type BananasMonSKU struct {
 	Sold            int
 	Days            int
 	LastUTC         time.Time
-	Pending         bool
+	Pending         time.Time
 	ProbationPeriod int
 }
 
