@@ -96,6 +96,11 @@ func (c *Controller) Save(name string, f file.Any) error {
 		ServerSideEncryption: aws.String("AES256"),
 	}
 
+	switch f.(type) {
+	case file.BananasMon:
+		input.Tagging = aws.String("App Name=hit-the-bananas")
+	}
+
 	result, err := c.c3svc.PutObject(input)
 	if err != nil {
 		return err
