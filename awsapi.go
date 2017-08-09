@@ -2,6 +2,8 @@ package awsapi
 
 import (
 	"errors"
+	"io/ioutil"
+	"os"
 
 	"encoding/json"
 
@@ -55,6 +57,36 @@ func (c Controller) GetVerIDs() map[string]string {
 	return bin
 }
 
+// OpenFile opens a generic file on AWS.
+func (c *Controller) OpenFile(f *os.File) (bool, error) {
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(c.bucket),
+		Key:    aws.String(f.Name()),
+	}
+
+	resp, err := c.c3svc.GetObject(input)
+
+	if err == nil {
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return false, err
+		}
+
+		_, err = f.Write(b)
+		if err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
+
+	if strings.Contains(err.Error(), "NoSuchKey") {
+		return false, nil
+	}
+
+	return true, err
+}
+
 // Open gets JSON from AWS S3 populates the custom struct of the file
 // key is the dir + "/" + filename
 // returns false if err reads NoSuchKey meaning does not exist. Can read true
@@ -77,6 +109,25 @@ func (c *Controller) Open(name string, f file.Any) (bool, error) {
 	}
 
 	return true, err
+}
+
+// SaveFile saves a generic file on AWS.
+func (c *Controller) SaveFile(f *os.File) error {
+	input := &s3.PutObjectInput{
+		Body:                 aws.ReadSeekCloser(f),
+		Bucket:               aws.String(c.bucket),
+		Key:                  aws.String(f.Name()),
+		ServerSideEncryption: aws.String("AES256"),
+	}
+
+	result, err := c.c3svc.PutObject(input)
+	if err != nil {
+		return err
+	}
+
+	c.verIDs[f.Name()] = result.VersionId
+
+	return nil
 }
 
 // Save sends a file to AWS S3 bucket, uses name of file.
