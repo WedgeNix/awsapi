@@ -58,33 +58,38 @@ func (c Controller) GetVerIDs() map[string]string {
 }
 
 // OpenFile opens a generic file on AWS.
-func (c *Controller) OpenFile(f *os.File) (bool, error) {
+func (c *Controller) OpenFile(name string) (*os.File, error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(c.bucket),
-		Key:    aws.String(f.Name()),
+		Key:    aws.String(name),
 	}
 
 	resp, err := c.c3svc.GetObject(input)
 
+	f, err := os.Create(name)
+	if err != nil {
+		return f, err
+	}
+
 	if err == nil {
 		b, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return false, err
+			return f, err
 		}
 
 		_, err = f.Write(b)
 		if err != nil {
-			return false, err
+			return f, err
 		}
 
-		return true, nil
+		return f, nil
 	}
 
 	if strings.Contains(err.Error(), "NoSuchKey") {
-		return false, nil
+		return f, nil
 	}
 
-	return true, err
+	return f, err
 }
 
 // Open gets JSON from AWS S3 populates the custom struct of the file
