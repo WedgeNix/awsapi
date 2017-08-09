@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+//D2sVendor maches the stucture of the JSON file that keeps track of vendor processed data.
+type D2sVendor struct {
+	Days      int
+	Processed bool
+}
+
 // BananasMonSKU holds SKU information needed for just-in-time calculations.
 type BananasMonSKU struct {
 	Sold            int

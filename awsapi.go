@@ -64,6 +64,7 @@ func (c *Controller) Open(name string, f file.Any) (bool, error) {
 		Bucket: aws.String(c.bucket),
 		Key:    aws.String(name),
 	}
+
 	resp, err := c.c3svc.GetObject(input)
 
 	if err == nil {
@@ -99,6 +100,8 @@ func (c *Controller) Save(name string, f file.Any) error {
 	switch f.(type) {
 	case file.BananasMon:
 		input.Tagging = aws.String("App Name=hit-the-bananas")
+	case file.D2sVendorDays:
+		input.Tagging = aws.String("App Name=drive-2-sku")
 	}
 
 	result, err := c.c3svc.PutObject(input)

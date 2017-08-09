@@ -7,6 +7,14 @@ type Any interface {
 	__()
 }
 
+//D2sVendorDays maps Vendor to processed days for D2s.
+type D2sVendorDays map[string]*types.D2sVendor
+
+// D2sVendorDaysName hods file name
+const D2sVendorDaysName = "drive-2-sku/vendor_days.json"
+
+func (_ D2sVendorDays) __() {}
+
 // BananasMon maps SKUs to their respective just-in-time data.
 type BananasMon struct {
 	AvgWait   float64
