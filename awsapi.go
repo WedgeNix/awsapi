@@ -117,11 +117,15 @@ func (c *Controller) Open(name string, f file.Any) (bool, error) {
 }
 
 // SaveFile saves a generic file on AWS.
-func (c *Controller) SaveFile(f *os.File) error {
+func (c *Controller) SaveFile(path string, f *os.File) error {
+	if strings.LastIndex(path, "/") < len(path)-1 {
+		return errors.New("'" + path + "' is not a directory")
+	}
+
 	input := &s3.PutObjectInput{
 		Body:                 aws.ReadSeekCloser(f),
 		Bucket:               aws.String(c.bucket),
-		Key:                  aws.String(f.Name()),
+		Key:                  aws.String(path + f.Name()),
 		ServerSideEncryption: aws.String("AES256"),
 	}
 
