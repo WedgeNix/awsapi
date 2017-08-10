@@ -232,9 +232,12 @@ func (c *Controller) OpenDir(path dir.Path, d dir.Any) error {
 			}
 
 			var f file.BananasMon
-			_, err := c.Open(fname, &f)
+			exists, err := c.Open(fname, &f)
 			if err != nil {
 				return err
+			}
+			if !exists {
+				return errors.New("Unabled to open '" + fname + "'")
 			}
 			withoutDir := strings.Replace(fname, folder+`/`, "", -1)
 			withoutDirExt := strings.Replace(withoutDir, ext, "", -1)
