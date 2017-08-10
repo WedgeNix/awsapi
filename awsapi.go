@@ -13,11 +13,11 @@ import (
 
 	"github.com/WedgeNix/awsapi/dir"
 	"github.com/WedgeNix/awsapi/file"
+	"github.com/WedgeNix/util"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/mrmiguu/print"
 )
 
 // Controller method struct for StartAWS
@@ -142,7 +142,7 @@ func (c *Controller) Save(name string, f file.Any) error {
 	if err != nil {
 		return err
 	}
-	print.Msg(string(b))
+	util.Log(string(b))
 
 	r := bytes.NewReader(b)
 
@@ -174,19 +174,19 @@ func (c *Controller) Save(name string, f file.Any) error {
 func (c *Controller) SaveDir(path dir.Path, d dir.Any) error {
 	parts := strings.Split(string(path), "*")
 	if len(parts) < 1 {
-		return errors.New("No extension provided")
+		return errors.New("no extension provided")
 	}
 	folder := parts[0]
 	if len(parts) < 2 {
-		return errors.New("No extension provided")
+		return errors.New("no extension provided")
 	}
 	ext := parts[1]
 
 	switch d := d.(type) {
 	case dir.BananasMon:
-		print.Msg("files in dir: ", len(d))
+		util.Log("files in dir: ", len(d))
 		for name, f := range d {
-			print.Msg("Saving '", name, "'")
+			util.Log("Saving '", name, "'")
 			err := c.Save(folder+name+ext, f)
 			if err != nil {
 				return err
@@ -202,11 +202,11 @@ func (c *Controller) SaveDir(path dir.Path, d dir.Any) error {
 func (c *Controller) OpenDir(path dir.Path, d dir.Any) error {
 	parts := strings.Split(string(path), "/*")
 	if len(parts) < 1 {
-		return errors.New("No extension provided")
+		return errors.New("no extension provided")
 	}
 	folder := parts[0]
 	if len(parts) < 2 {
-		return errors.New("No extension provided")
+		return errors.New("no extension provided")
 	}
 	ext := parts[1]
 
@@ -237,7 +237,7 @@ func (c *Controller) OpenDir(path dir.Path, d dir.Any) error {
 				return err
 			}
 			if !exists {
-				return errors.New("Unabled to open '" + fname + "'")
+				return errors.New("unabled to open '" + fname + "'")
 			}
 			withoutDir := strings.Replace(fname, folder+`/`, "", -1)
 			withoutDirExt := strings.Replace(withoutDir, ext, "", -1)
