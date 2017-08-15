@@ -27,6 +27,18 @@ type Controller struct {
 	verIDs map[string]*string
 }
 
+// MustSave saves a file to AWS straight through.
+func MustSave(path string, f *os.File) {
+	c, err := New()
+	if err != nil {
+		panic(err)
+	}
+	err = c.SaveFile(path, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // New starts a AWS method
 func New(test ...bool) (*Controller, error) {
 	var c Controller
