@@ -2,9 +2,9 @@ package awsapi
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 
+	"encoding/gob"
 	"encoding/json"
 
 	"strings"
@@ -69,39 +69,32 @@ func (c Controller) GetVerIDs() map[string]string {
 	return bin
 }
 
-// OpenFile opens a generic file on AWS.
-func (c *Controller) OpenFile(name string) (*os.File, error) {
+// Read opens a generic file on AWS.
+func (c *Controller) Read(path string, v interface{}) error {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(c.bucket),
-		Key:    aws.String(name),
+		Key:    aws.String(path),
 	}
 
 	resp, err := c.c3svc.GetObject(input)
 
-	f, err := os.Create(name)
-	if err != nil {
-		return f, err
-	}
-
 	if err == nil {
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return f, err
+		switch strings.ToLower(path[strings.LastIndex(path, "."):]) {
+		case ".json":
+			err = json.NewDecoder(resp.Body).Decode(v)
+		case ".gob":
+			err = gob.NewDecoder(resp.Body).Decode(v)
+		default:
+			return errors.New("invalid file extension")
 		}
-
-		_, err = f.Write(b)
-		if err != nil {
-			return f, err
-		}
-
-		return f, nil
+		return err
 	}
 
 	if strings.Contains(err.Error(), "NoSuchKey") {
-		return f, nil
+		return nil
 	}
 
-	return f, err
+	return err
 }
 
 // Open gets JSON from AWS S3 populates the custom struct of the file
@@ -128,7 +121,45 @@ func (c *Controller) Open(name string, f file.Any) (bool, error) {
 	return true, err
 }
 
+// Write saves a generic file on AWS.
+func (c *Controller) Write(path string, v interface{}) error {
+
+	var buf bytes.Buffer
+	var err error
+
+	switch strings.ToLower(path[strings.LastIndex(path, "."):]) {
+	case ".json":
+		err = json.NewEncoder(&buf).Encode(v)
+	case ".gob":
+		err = gob.NewEncoder(&buf).Encode(v)
+	default:
+		return errors.New("invalid file extension")
+	}
+	if err != nil {
+		return err
+	}
+
+	r := bytes.NewReader(buf.Bytes())
+
+	input := &s3.PutObjectInput{
+		Body:                 aws.ReadSeekCloser(r),
+		Bucket:               aws.String(c.bucket),
+		Key:                  aws.String(path),
+		ServerSideEncryption: aws.String("AES256"),
+	}
+
+	result, err := c.c3svc.PutObject(input)
+	if err != nil {
+		return util.Err(err)
+	}
+
+	c.verIDs[path] = result.VersionId
+
+	return nil
+}
+
 // SaveFile saves a generic file on AWS.
+// TODO: have future programs/libraries use 'Write'
 func (c *Controller) SaveFile(path string, f *os.File) error {
 	if strings.LastIndex(path, "/") < len(path)-1 {
 		return errors.New("'" + path + "' is not a directory")
