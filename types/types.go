@@ -12,6 +12,7 @@ type D2sVendor struct {
 
 // BananasMonSKU holds SKU information needed for just-in-time calculations.
 type BananasMonSKU struct {
+	UPC             string `regex:"[0-9]{12,13}"`
 	Sold            int
 	Days            int
 	LastUTC         time.Time
