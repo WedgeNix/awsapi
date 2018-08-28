@@ -3,6 +3,7 @@ package awsapi
 import (
 	"errors"
 	"os"
+	"path/filepath"
 
 	"encoding/gob"
 	"encoding/json"
@@ -171,7 +172,9 @@ func (c *Controller) SaveFile(path string, f *os.File) error {
 		Key:                  aws.String(path + f.Name()),
 		ServerSideEncryption: aws.String("AES256"),
 	}
-
+	if filepath.Ext(f.Name()) == ".log" {
+		input.ContentType = aws.String("text/plain")
+	}
 	result, err := c.c3svc.PutObject(input)
 	if err != nil {
 		return err
