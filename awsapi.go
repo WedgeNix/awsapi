@@ -174,6 +174,7 @@ func (c *Controller) SaveFile(path string, f *os.File) error {
 	}
 	if filepath.Ext(f.Name()) == ".log" {
 		input.ContentType = aws.String("text/plain")
+		input.ACL = aws.String("public-read")
 	}
 	result, err := c.c3svc.PutObject(input)
 	if err != nil {
